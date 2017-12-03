@@ -90,7 +90,22 @@ y(t) = \sum_{k = - \inf}^{\inf} \delta(k) h(t - k)
 インパルス応答さえ知っておけばシステムの出力が把握出来る感じ。インパルス応答すごい。
 
 ### 実装
-単純に畳み込み演算の実装を書くと、
+例えば上の数式は以下の様な関数として実装出来るでしょう。
+
+```ruby
+def y(t)
+  (-Float::INFINITY..Float::INFINITY).map{|k| delta[k] * h[t - k]}.sum
+end
+```
+
+また、Rubyには畳み込み演算を実現するメソッド`Enumerable#inject`が既に用意されています。
+`inject`を用いた場合の実装は以下の様になりそうです。
+
+```ruby
+def y(t)
+  (-Float::INFINITY..Float::INFINITY).inject(0){|acc, k| acc + (delta[k] * h[t - k])}
+end
+```
 
 ## 高速フーリエ変換(FFT)
 講義TAで腐るほど問題は見てきましたが、理論は怪しいのでそもそもフーリエ変換って何の為に使うのってところから軽く復習。
