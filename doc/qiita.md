@@ -56,29 +56,48 @@ http://www.openairlib.net/auralizationdb
 
 
 # 実装する上で理解しておく必要がある理論
-## インパルス応答
+## インパルス応答と畳み込み演算
 インパルスと呼ばれる非常に短い信号を入力したときのシステムの出力。インパルスとは、時間的幅が無限小で高さが無限大のパルス。実際のシステムでは、テスト用の入力として完全なインパルスを生成するのは不可能である。したがって、インパルスの近似として短いパルスを使う。そのパルスがインパルス応答に比較して短ければ、その結果は理論上のインパルス応答に十分近いと言える。(Wikipedia)
-ざっとWikipediaを読んで見たところ、結局以下の点を頭に入れておけば良さそう。
-- 線形
-  - 入力が2倍になれば出力も2倍に
+
+ざっと調べ回って見たところ、以下の点を頭に入れておけば良さそうです。
+
+あるシステム$T$について、システム$T$に対する入力$f(t)$は$T[f(t)] = g(t)$と表す事が出来て、以下の性質を満たすとする。
+
+- 線形性
+  - 入力が2倍になれば出力も2倍に（以下が成立）
+
 ```math
-e^{i\pi} = -1
+T[a \cdot f(t)] = a \cdot T[f(t)] = a \cdot g(t)
 ```
-- 時不変
-  - 同じ入力には同じ出力
 
-## 畳み込み演算
+- 時不変性
+  - 時間に関らず同じ入力には同じ出力（以下が任意の$t_{0}$について成立）
+
+```math
+T[f(t - t_{0})] = g(t - t_{0})
+```
+
+この時、出力$f(t)$をインパルス（単位）とすると、$g(t)$をインパルス応答と呼ぶ。通常、インパルスは$\delta(t)$、インパルス応答は$h(t)$と表される。
+また、この線形時不変システム$T$の出力$y(t)$はインパルス$\delta(t)$とインパルス応答$h(t)$の畳み込み演算で表され、
+
+```math
+y(t) = \sum_{k = - \inf}^{\inf} \delta(k) h(t - k)
+```
+
+と書く事が出来る。
+インパルス応答さえ知っておけばシステムの出力が把握出来る感じ。インパルス応答すごい。
 
 
-## FFT
+## 高速フーリエ変換(FFT)
 
 
 # 実装
 
 ## Reference
-https://www.g200kg.com/jp/docs/dic/convolutionreverb.html  
-http://www.ari-web.com/service/soft/reverb-4.htm  
-http://yukara-13.hatenablog.com/entry/2013/12/20/094926  
-https://en.wikipedia.org/wiki/Reverberation  
-https://en.wikipedia.org/wiki/Fast_Fourier_transform  
-http://brian-doyle.com/2011/10/28/convolution-vs-algorithmic-reverbs/  
+https://www.g200kg.com/jp/docs/dic/convolutionreverb.html
+http://www.ari-web.com/service/soft/reverb-4.htm
+http://yukara-13.hatenablog.com/entry/2013/12/20/094926
+https://en.wikipedia.org/wiki/Reverberation
+https://en.wikipedia.org/wiki/Fast_Fourier_transform
+http://brian-doyle.com/2011/10/28/convolution-vs-algorithmic-reverbs/
+http://www.wave.ie.niigata-u.ac.jp/yamaguchi/education/basic_research/spectrum_signal_processing.pdf
