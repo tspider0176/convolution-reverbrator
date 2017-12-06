@@ -70,7 +70,7 @@ r = (0...frame_num - 1).map{ |i|
 
   convolution = part_fft.zip(impulse_fft).map { |f, s| f * s }
 
-  res = fft(convolution, 2 * N).map(&:real)
+  res = ifft(convolution, 2 * N).map(&:real)
 
   res[0...N]
 }.flatten
