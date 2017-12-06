@@ -69,25 +69,45 @@ def mul_vec(w1, w2)
   w1.zip(w2).map { |f, s| f * s }
 end
 
-def convolution_on_freq(signal, impulse, start_point, end_point, n)
+def convolution_on_freq(signal, impulse, i, n)
+  start_point = n * i
+  end_point = n * (i + 2)
   part_fft = part_fft(signal, start_point, end_point)
   result = mul_vec(part_fft, impulse)
   ifft(result, 2 * n).map(&:real)
 end
 
-def convolution_reverb(signal, impulse)
-  n = 2**nextpow2(impulse.length).to_i
-  extended_impulse = zeros(n) + impulse + zeros(n - impulse.length)
+def extended_impulse(impulse, n)
+  zeros(n) + impulse + zeros(n - impulse.length)
+end
 
-  frame_num = ceil((signal.length + n) / n.to_f).to_i
-  extended_signal = zeros(n) + signal + zeros(n * frame_num - signal.length - n)
+def extended_signal(signal, frame_num, n)
+  zeros(n) + signal + zeros(n * frame_num - signal.length - n)
+end
 
+def calc_frame_num(signal, n)
+  ceil((signal.length + n) / n.to_f).to_i
+end
+
+def calc_frame_length(impulse)
+  2**nextpow2(impulse.length).to_i
+end
+
+def convolution_proc(extended_signal, extended_impulse, n)
   impulse_fft = fft(extended_impulse)
-  r = (0...frame_num - 1).map do |i|
-    res = convolution_on_freq(extended_signal, impulse_fft, n * i, n * (i + 2), n)
-    res[0...n]
+  (0...frame_num - 1).map do |i|
+    convolution_on_freq(extended_signal, impulse_fft, i, n)[0...n]
   end
+end
 
+def convolution_reverb(signal, impulse)
+  n = calc_frame_length(impulse)
+  extended_impulse = extended_impulse(impulse, n)
+
+  frame_num = calc_frame(signal, n)
+  extended_signal = extended_signal(signal, frame_num, n)
+
+  convolution_proc(extended_signal, extended_impulse, n)
   r.flatten[0...signal.length].map { |i| i * SIGNED_SHORT_MAX }.map(&:to_i)
 end
 
