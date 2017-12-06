@@ -27,7 +27,11 @@ end
 def fft(a, tf = 1)
   n = a.size
   return a if n == 1
-  w = tf == 1 ? Complex.polar(1, -2 * Math::PI / n) : Complex.polar(1, 2 * Math::PI / n)
+  w = if tf == 1
+        Complex.polar(1, -2 * Math::PI / n)
+      else
+        Complex.polar(1, 2 * Math::PI / n)
+      end
   a1 = fft((0..n / 2 - 1).map { |i| a[i] + a[i + n / 2] }, tf)
   a2 = fft((0..n / 2 - 1).map { |i| (a[i] - a[i + n / 2]) * (w**i) }, tf)
   a1.zip(a2).flatten
@@ -57,14 +61,6 @@ def transform(wavs)
   wavs.map { |i| i / SIGNED_SHORT_MAX.to_f }
 end
 
-def create_extended_impulse(impulse, n)
-  zeros(n) + impulse + zeros(n - impulse.length)
-end
-
-def create_extended_signal(signal, frame_num, n)
-  zeros(n) + signal + zeros(n * frame_num - signal.length - n)
-end
-
 def part_fft(signal, start_point, end_point)
   fft(signal[start_point...end_point])
 end
@@ -81,14 +77,14 @@ end
 
 def convolution_reverb(signal, impulse)
   n = 2**nextpow2(impulse.length).to_i
-  extended_impulse = create_extended_impulse(impulse, n)
+  extended_impulse = zeros(n) + impulse + zeros(n - impulse.length)
 
   frame_num = ceil((signal.length + n) / n.to_f).to_i
-  new_signal = create_extended_signal(signal, frame_num, n)
+  extended_signal = zeros(n) + signal + zeros(n * frame_num - signal.length - n)
 
   impulse_fft = fft(extended_impulse)
   r = (0...frame_num - 1).map do |i|
-    res = convolution_on_freq(new_signal, impulse_fft, n * i, n * (i + 2), n)
+    res = convolution_on_freq(extended_signal, impulse_fft, n * i, n * (i + 2), n)
     res[0...n]
   end
 
