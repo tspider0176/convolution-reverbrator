@@ -1,6 +1,5 @@
 require 'rubygems'
 require 'wav-file'
-require 'benchmark'
 require 'matrix'
 
 SIGNED_SHORT_MAX = '111111111111111'.to_i(2)
@@ -46,33 +45,54 @@ def read(file_name)
   get_wav_array(data_chunk, format)
 end
 
-def convolution_reverb(input, impulse)
+def normalize(wavs)
+  peak = [wavs.max, wavs.min.abs].max
+  rate = SIGNED_SHORT_MAX / peak.to_f
+  wavs.map do |data|
+    data * rate
+  end.map(&:to_i)
+end
+
+def transform(wavs)
+  wavs.map { |i| i / SIGNED_SHORT_MAX.to_f }
+end
+
+def create_extended_impulse(impulse, n)
+  zeros(n) + impulse + zeros(n - impulse.length)
+end
+
+def create_extended_signal(signal, frame_num, n)
+  zeros(n) + signal + zeros(n * frame_num - signal.length - n)
+end
+
+def part_fft(signal, start_point, end_point)
+  fft(signal[start_point...end_point])
+end
+
+def mul_vec(w1, w2)
+  w1.zip(w2).map { |f, s| f * s }
+end
+
+def convolution_on_freq(signal, impulse, start_point, end_point, n)
+  part_fft = part_fft(signal, start_point, end_point)
+  result = mul_vec(part_fft, impulse)
+  ifft(result, 2 * n).map(&:real)
+end
+
+def convolution_reverb(signal, impulse)
   n = 2**nextpow2(impulse.length).to_i
+  extended_impulse = create_extended_impulse(impulse, n)
 
-  new_impulse = impulse + zeros(n - impulse.length)
-  new_impulse_n2 = zeros(n) + new_impulse
-  new_impulse_n2 = new_impulse_n2.map { |i| i / SIGNED_SHORT_MAX.to_f }
+  frame_num = ceil((signal.length + n) / n.to_f).to_i
+  new_signal = create_extended_signal(signal, frame_num, n)
 
-  frame_num = ceil((input.length + n) / n.to_f).to_i
-  new_sig_length = n * frame_num
-  new_signal = zeros(n) + input + zeros(new_sig_length - input.length - n)
-  new_signal = new_signal.map { |i| i / SIGNED_SHORT_MAX.to_f }
-
-  impulse_fft = fft(new_impulse_n2)
-
-  r = (0...frame_num - 1).map { |i|
-    start_point = n * i
-    end_point = n * (i + 2)
-    part_fft = fft(new_signal[start_point...end_point])
-
-    convolution = part_fft.zip(impulse_fft).map { |f, s| f * s }
-
-    res = ifft(convolution, 2 * n).map(&:real)
-
+  impulse_fft = fft(extended_impulse)
+  r = (0...frame_num - 1).map do |i|
+    res = convolution_on_freq(new_signal, impulse_fft, n * i, n * (i + 2), n)
     res[0...n]
-  }.flatten
+  end
 
-  r[0...input.length].map { |i| i * SIGNED_SHORT_MAX }.map(&:to_i)
+  r.flatten[0...signal.length].map { |i| i * SIGNED_SHORT_MAX }.map(&:to_i)
 end
 
 def output(input_file_name, file_name, data)
@@ -90,6 +110,6 @@ end
 input = read(ARGV[0])
 impulse = read(ARGV[1])
 
-res = convolution_reverb(input, impulse)
+res = convolution_reverb(transform(input), transform(impulse))
 
-output(ARGV[0], 'output.wav', res)
+output(ARGV[0], 'output.wav', normalize(res))
