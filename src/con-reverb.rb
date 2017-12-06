@@ -38,50 +38,58 @@ def ifft(a, n)
   fft(a, -1).map { |x| x / n }
 end
 
-f = open(ARGV[0])
-format = WavFile.readFormat(f)
-data_chunk = WavFile.readDataChunk(f)
-input = get_wav_array(data_chunk, format)
-f.close
-
-f = open(ARGV[1])
-format = WavFile.readFormat(f)
-data_chunk = WavFile.readDataChunk(f)
-impulse = get_wav_array(data_chunk, format)
-f.close
-
-N = 2**nextpow2(impulse.length).to_i
-
-new_impulse = impulse + zeros(N - impulse.length)
-new_impulse_n2 = zeros(N) + new_impulse
-new_impulse_n2 = new_impulse_n2.map { |i| i / SIGNED_SHORT_MAX.to_f }
-
-frame_num = ceil((input.length + N) / N.to_f).to_i
-new_sig_length = N * frame_num
-new_signal = zeros(N) + input + zeros(new_sig_length - input.length - N)
-new_signal = new_signal.map { |i| i / SIGNED_SHORT_MAX.to_f }
-
-impulse_fft = fft(new_impulse_n2)
-
-r = (0...frame_num - 1).map{ |i|
-  start_point = N * i
-  end_point = N * (i + 2)
-  part_fft = fft(new_signal[start_point...end_point])
-
-  convolution = part_fft.zip(impulse_fft).map { |f, s| f * s }
-
-  res = ifft(convolution, 2 * N).map(&:real)
-
-  res[0...N]
-}.flatten
-
-
-new_wavs = r[0...input.length].map { |i| i * SIGNED_SHORT_MAX }.map(&:to_i)
-
-data_chunk.data = new_wavs.pack(bit_per_sample(format))
-open('output.wav', 'w') do |out|
-  WavFile.write(out, format, [data_chunk])
+def read(file_name)
+  f = open(file_name)
+  format = WavFile.readFormat(f)
+  data_chunk = WavFile.readDataChunk(f)
+  f.close
+  get_wav_array(data_chunk, format)
 end
 
+def convolution_reverb(input, impulse)
+  n = 2**nextpow2(impulse.length).to_i
 
+  new_impulse = impulse + zeros(n - impulse.length)
+  new_impulse_n2 = zeros(n) + new_impulse
+  new_impulse_n2 = new_impulse_n2.map { |i| i / SIGNED_SHORT_MAX.to_f }
 
+  frame_num = ceil((input.length + n) / n.to_f).to_i
+  new_sig_length = n * frame_num
+  new_signal = zeros(n) + input + zeros(new_sig_length - input.length - n)
+  new_signal = new_signal.map { |i| i / SIGNED_SHORT_MAX.to_f }
+
+  impulse_fft = fft(new_impulse_n2)
+
+  r = (0...frame_num - 1).map { |i|
+    start_point = n * i
+    end_point = n * (i + 2)
+    part_fft = fft(new_signal[start_point...end_point])
+
+    convolution = part_fft.zip(impulse_fft).map { |f, s| f * s }
+
+    res = ifft(convolution, 2 * n).map(&:real)
+
+    res[0...n]
+  }.flatten
+
+  r[0...input.length].map { |i| i * SIGNED_SHORT_MAX }.map(&:to_i)
+end
+
+def output(input_file_name, file_name, data)
+  f = open(input_file_name)
+  format = WavFile.readFormat(f)
+  data_chunk = WavFile.readDataChunk(f)
+  f.close
+
+  data_chunk.data = data.pack(bit_per_sample(format))
+  open(file_name, 'w') do |out|
+    WavFile.write(out, format, [data_chunk])
+  end
+end
+
+input = read(ARGV[0])
+impulse = read(ARGV[1])
+
+res = convolution_reverb(input, impulse)
+
+output(ARGV[0], 'output.wav', res)
