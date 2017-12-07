@@ -17,7 +17,7 @@ def ceil(f)
 end
 
 def nextpow2(n)
-  Math.log2(2**ceil(Math.log2(n)))
+  ceil(Math.log2(n))
 end
 
 def zeros(n)
