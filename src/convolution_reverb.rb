@@ -26,14 +26,14 @@ end
 
 def fft(a, tf = 1)
   n = a.size
+  t = 2 * Math::PI / n
   return a if n == 1
-  w = if tf == 1
-        Complex.polar(1, -2 * Math::PI / n)
-      else
-        Complex.polar(1, 2 * Math::PI / n)
-      end
   a1 = fft((0..n / 2 - 1).map { |i| a[i] + a[i + n / 2] }, tf)
-  a2 = fft((0..n / 2 - 1).map { |i| (a[i] - a[i + n / 2]) * (w**i) }, tf)
+  a2 = fft(
+    (0..n / 2 - 1).map do |i|
+      (a[i] - a[i + n / 2]) * (Complex.polar(1, (tf == 1 ? -1 : 1) * t)**i)
+    end, tf
+  )
   a1.zip(a2).flatten
 end
 
@@ -93,7 +93,7 @@ def calc_frame_length(impulse)
   2**nextpow2(impulse.length).to_i
 end
 
-def convolution_proc(extended_signal, extended_impulse, n)
+def convolution_proc(extended_signal, extended_impulse, frame_num, n)
   impulse_fft = fft(extended_impulse)
   (0...frame_num - 1).map do |i|
     convolution_on_freq(extended_signal, impulse_fft, i, n)[0...n]
@@ -104,11 +104,11 @@ def convolution_reverb(signal, impulse)
   n = calc_frame_length(impulse)
   extended_impulse = extended_impulse(impulse, n)
 
-  frame_num = calc_frame(signal, n)
+  frame_num = calc_frame_num(signal, n)
   extended_signal = extended_signal(signal, frame_num, n)
 
-  convolution_proc(extended_signal, extended_impulse, n)
-  r.flatten[0...signal.length].map { |i| i * SIGNED_SHORT_MAX }.map(&:to_i)
+  r = convolution_proc(extended_signal, extended_impulse, frame_num, n)
+  r.flatten[0...extended_signal.length].map { |i| i * SIGNED_SHORT_MAX }.map(&:to_i)
 end
 
 def output(input_file_name, file_name, data)
