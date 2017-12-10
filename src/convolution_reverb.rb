@@ -3,6 +3,7 @@ require 'wav-file'
 require 'matrix'
 
 SIGNED_SHORT_MAX = '111111111111111'.to_i(2)
+SIGNED_SHORT_MIN = -1 * '1000000000000000'.to_i(2)
 
 def get_wav_array(data_chunk, format)
   data_chunk.data.unpack(bit_per_sample(format))
@@ -49,9 +50,11 @@ def read(file_name)
   get_wav_array(data_chunk, format)
 end
 
+# => normalize_test
 def normalize(wavs)
   peak = [wavs.max, wavs.min.abs].max
-  rate = SIGNED_SHORT_MAX / peak.to_f
+  cond = wavs.max <= SIGNED_SHORT_MAX && wavs.min >= SIGNED_SHORT_MIN
+  rate = cond ? 1 : SIGNED_SHORT_MAX / peak.to_f
   wavs.map do |data|
     data * rate
   end.map(&:to_i)
@@ -122,3 +125,4 @@ def output(input_file_name, file_name, data)
     WavFile.write(out, format, [data_chunk])
   end
 end
+
