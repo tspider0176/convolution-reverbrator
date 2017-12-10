@@ -33,8 +33,8 @@ def fft(a, tf = 1)
   a1.zip(a2).flatten
 end
 
-def ifft(a, n)
-  fft(a, -1).map { |x| x / n }
+def ifft(a)
+  fft(a, -1).map { |x| x / a.length }
 end
 
 # => test_normalize
@@ -68,7 +68,7 @@ def convolution_on_freq(signal, impulse, i, n)
   end_point = n * (i + 2)
   part_fft = part_fft(signal, start_point, end_point)
   result = mul_vec(part_fft, impulse)
-  ifft(result, 2 * n).map(&:real)
+  ifft(result).map(&:real)
 end
 
 # => test_extended_impulse
