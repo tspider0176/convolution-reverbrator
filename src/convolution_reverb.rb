@@ -52,8 +52,8 @@ end
 
 # => normalize_test
 def normalize(wavs)
-  peak = [wavs.max, wavs.min.abs].max
   cond = wavs.max <= SIGNED_SHORT_MAX && wavs.min >= SIGNED_SHORT_MIN
+  peak = wavs.max > SIGNED_SHORT_MAX ? wavs.max : wavs.min
   rate = cond ? 1 : SIGNED_SHORT_MAX / peak.to_f
   wavs.map do |data|
     data * rate

@@ -40,9 +40,16 @@ class TestConvolutionReverb < Test::Unit::TestCase
     assert_equal expected, actual
   end
 
-  def test_normalize_con2
+  def test_normalize_cond2
     actual = normalize([32_767, -32_768, 1, -1])
     expected = [32_767, -32_768, 1, -1]
+
+    assert_equal expected, actual
+  end
+
+  def test_normalize_cond3
+    actual = normalize([65_535, -65_536, 32_767, -32_768])
+    expected = [32_767, -32_767, 16_383, -16_383]
 
     assert_equal expected, actual
   end
