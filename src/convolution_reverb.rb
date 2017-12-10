@@ -20,6 +20,9 @@ def zeros(n)
   Array.new(n, 0)
 end
 
+# => test_fft
+# Power:
+# fft(...).map{|i| i.abs / n / 2}
 def fft(a, tf = 1)
   n = a.size
   t = 2 * Math::PI / n

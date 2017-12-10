@@ -25,13 +25,6 @@ class TestConvolutionReverb < Test::Unit::TestCase
   def test_zeros_cond2
     assert_equal [], zeros(0)
   end
-=begin
-  def test_fft
-    zero = Complex.polar(0, 0)
-    # https://www.wolframalpha.com/input/?i=Fourier%5B%7B1,1,1,1%7D%5D
-    assert_equal [2, zero, zero, zero], fft([1, 1, 1, 1])
-  end
-=end
 
   def test_normalize_cond1
     actual = normalize([1, -1, 5, -3])
@@ -94,5 +87,18 @@ class TestConvolutionReverb < Test::Unit::TestCase
     expected = 8
 
     assert_equal expected, actual
+  end
+
+  def test_fft
+    zero = Complex.polar(0, 0)
+    # https://www.wolframalpha.com/input/?i=Fourier%5B%7B1,1,1,1%7D%5D
+    assert_equal [4, zero, zero, zero], fft([1, 1, 1, 1])
+  end
+
+  def test_ifft
+    # https://www.wolframalpha.com/input/?i=InverseFourier%5B%7B4,+0,+0,+0%7D%5D
+    zero = Complex.polar(0, 0)
+
+    assert_equal [1, 1, 1, 1], ifft([Complex.polar(4, 0), zero, zero, zero])
   end
 end
