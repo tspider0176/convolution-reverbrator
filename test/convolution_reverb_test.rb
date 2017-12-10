@@ -53,4 +53,46 @@ class TestConvolutionReverb < Test::Unit::TestCase
 
     assert_equal expected, actual
   end
+
+  def test_transform
+    actual = transform([32_767, -32_768, 16_383, -16_384])
+    expected = [1.0, -1.0, 16_383 / 32_767.0, -16_384 / 32_768.0]
+
+    assert_equal expected, actual
+  end
+
+  def test_mul_vec
+    actual = mul_vec([1, 2, 3], [2, 3, 4])
+    expected = [2, 6, 12]
+
+    assert_equal expected, actual
+  end
+
+  def test_extended_impulse
+    actual = extended_impulse([1, 1, 1, 1], 8)
+    expected = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0]
+
+    assert_equal expected, actual
+  end
+
+  def test_extended_signal
+    actual = extended_signal([1, 1, 1, 1], 2, 8)
+    expected = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0]
+
+    assert_equal expected, actual
+  end
+
+  def test_calc_frame_num
+    actual = calc_frame_num([1, 1, 1, 1], 8)
+    expected = 2
+
+    assert_equal expected, actual
+  end
+
+  def test_calc_frame_length
+    actual = calc_frame_length([1, 1, 1, 1])
+    expected = 8
+
+    assert_equal expected, actual
+  end
 end
