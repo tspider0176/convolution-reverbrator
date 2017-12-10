@@ -122,10 +122,3 @@ def output(input_file_name, file_name, data)
     WavFile.write(out, format, [data_chunk])
   end
 end
-
-input = read(ARGV[0])
-impulse = read(ARGV[1])
-
-res = convolution_reverb(transform(input), transform(impulse))
-
-output(ARGV[0], 'output.wav', normalize(res))
